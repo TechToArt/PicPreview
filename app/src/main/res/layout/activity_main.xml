@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="com.ax.picpreview.MainActivity">
+
+    <Button
+        android:id="@+id/btn_open_album"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="从相册中选取照片"/>
+
+    <com.ax.picpreview.MyImageView
+        android:id="@+id/iv"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#00ff00"/>
+
+</LinearLayout>
