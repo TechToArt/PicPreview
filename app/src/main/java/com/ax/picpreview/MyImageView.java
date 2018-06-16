@@ -19,6 +19,7 @@ import android.view.WindowManager;
 
 public class MyImageView extends android.support.v7.widget.AppCompatImageView {
 	private int viewWidth, viewHeight;
+	private int bitmapWidth, bitmapHeight;
 	private float lastX, lastY;// 上一次记录的点
 	private float firstDistance;//上一次两点间的距离
 	private float offsetX, offsetY;//x,y轴的偏移距离
@@ -58,7 +59,7 @@ public class MyImageView extends android.support.v7.widget.AppCompatImageView {
 			case MotionEvent.ACTION_MOVE:
 				if (event.getPointerCount() == 2) {//两点触摸
 					float dis = getDistance(event);
-					float varScale = (float) Math.pow(dis*1.0 / firstDistance, 1.0 / 4);
+					float varScale = (float) Math.pow(dis * 1.0 / firstDistance, 1.0 / 4);
 					scale *= varScale;
 					if (scale > 10) {
 						scale = 10f;
@@ -69,7 +70,7 @@ public class MyImageView extends android.support.v7.widget.AppCompatImageView {
 				} else if (event.getPointerCount() == 1) {//单点触摸
 					float currentX = event.getX();
 					float currentY = event.getY();
-					if (event.getRawX() < halfScreenWidth){
+					if (event.getRawX() < halfScreenWidth) {
 						offsetX += currentX - lastX;
 					} else {
 						offsetX += lastX - currentX;
@@ -84,7 +85,6 @@ public class MyImageView extends android.support.v7.widget.AppCompatImageView {
 			default:
 				break;
 		}
-
 		super.onTouchEvent(event);
 		return true;
 	}
@@ -105,23 +105,29 @@ public class MyImageView extends android.support.v7.widget.AppCompatImageView {
 	@Override
 	protected void onDraw(Canvas canvas) {
 		if (bitmap != null) {
-			try {
-				int scaleHeight = (int) (viewWidth / (float) bitmap.getWidth() * bitmap.getHeight());
-				bitmapLeft = halfScreenWidth-(int) (viewWidth*scale - offsetX);
-				bitmapRight = halfScreenWidth+(int) (viewWidth*scale - offsetX);
-				bitmapTop = (int) (offsetY + (scaleHeight - scaleHeight * scale) / 2);
-				bitmapBottom = (int) (bitmapTop + scaleHeight * scale);
-				Paint paint = new Paint();
-				canvas.drawBitmap(bitmap, new Rect(0, 0, (int) (bitmap.getWidth() - offsetX), bitmap.getHeight()),
-						new Rect(bitmapLeft, bitmapTop, halfScreenWidth, bitmapBottom), paint);
-				Matrix m = new Matrix();
-				m.postScale(-1, 1);//水平方向镜像
-				Bitmap b = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, true);
-				canvas.drawBitmap(b, new Rect((int) offsetX, 0, b.getWidth(), b.getHeight()),
-						new Rect(halfScreenWidth, bitmapTop, bitmapRight, bitmapBottom), paint);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+			//图片尺寸
+			bitmapWidth = bitmap.getWidth();
+			bitmapHeight = bitmap.getHeight();
+			//图片和View的比例关系
+			float s = (float) bitmapWidth / viewWidth;
+			//按照原图比例，为适应View宽度而计算显示图片高度
+			int scaleHeight = (int) (viewWidth / (float) bitmapWidth * bitmapHeight);
+			//原图左边位置=屏幕中间位置-缩放后的图片宽度+x轴偏移量
+			bitmapLeft = (int) (halfScreenWidth - viewWidth * scale + (offsetX > 0 ? offsetX * scale : 0));
+			//镜像图右边位置=屏幕中间位置+缩放后的图片宽度-x轴偏移量
+			bitmapRight = (int) (halfScreenWidth + viewWidth * scale - (offsetX > 0 ? offsetX * scale : 0));
+			//图片上边位置=Y轴偏移量+缩放变化的一半
+			bitmapTop = (int) (offsetY + (scaleHeight - scaleHeight * scale) / 2);
+			//图片下边位置=缩放后的图片高度+上边位置
+			bitmapBottom = (int) (scaleHeight * scale) + bitmapTop;
+			Paint paint = new Paint();
+			canvas.drawBitmap(bitmap, new Rect(0, 0, (int) (bitmapWidth - offsetX * s), bitmapHeight),
+					new Rect(bitmapLeft, bitmapTop, halfScreenWidth, bitmapBottom), paint);
+			Matrix m = new Matrix();
+			m.postScale(-1, 1);//水平方向镜像
+			Bitmap b = Bitmap.createBitmap(bitmap, 0, 0, bitmapWidth, bitmapHeight, m, true);
+			canvas.drawBitmap(b, new Rect((int) (offsetX * s), 0, b.getWidth(), b.getHeight()),
+					new Rect(halfScreenWidth, bitmapTop, bitmapRight, bitmapBottom), paint);
 
 			invalidate();
 		} else {
@@ -134,8 +140,7 @@ public class MyImageView extends android.support.v7.widget.AppCompatImageView {
 		}
 	}
 
-	public static int getScreenWidth(Context context)
-	{
+	public static int getScreenWidth(Context context) {
 		WindowManager wm = (WindowManager) context
 				.getSystemService(Context.WINDOW_SERVICE);
 		DisplayMetrics outMetrics = new DisplayMetrics();
